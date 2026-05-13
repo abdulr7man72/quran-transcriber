@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quran Transcriber — تحويل تلاوة القرآن إلى نص</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Noto Naskh Arabic', 'Amiri', serif; }
+    .quran-text { font-family: 'Amiri', serif; font-size: 1.5rem; line-height: 2.2; }
+    .latin { font-family: 'Inter', system-ui, sans-serif; }
+    .drop-zone { border: 2px dashed #4b5563; transition: all 0.3s; }
+    .drop-zone.active { border-color: #10b981; background: rgba(16,185,129,0.05); }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .card-excellent { border-right: 4px solid #10b981; }
+    .card-good { border-right: 4px solid #f59e0b; }
+    .card-poor { border-right: 4px solid #ef4444; }
+    .card-partial { border-right: 4px solid #f97316; }
+    .segment-card { cursor: pointer; transition: all 0.2s; }
+    .segment-card:hover { transform: translateX(-4px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    .segment-card.playing { border-color: #3b82f6 !important; box-shadow: 0 0 0 2px #3b82f6; }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    /* Toast */
+    .toast { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2 w-full max-w-md"></div>
+
+  <!-- Main Layout -->
+  <div class="max-w-5xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <header class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-emerald-400 mb-2">🕌 Quran Transcriber</h1>
+      <p class="text-gray-400">تحويل تلاوة القرآن الكريم إلى نص عربي مع تطابق دقيق</p>
+    </header>
+
+    <!-- Upload Card -->
+    <div id="upload-card" class="bg-gray-900 rounded-2xl p-6 mb-6 border border-gray-800">
+      <h2 class="text-xl font-semibold text-white mb-4">📤 رفع الملف الصوتي</h2>
+
+      <!-- Drop Zone -->
+      <div id="drop-zone" class="drop-zone rounded-xl p-8 text-center cursor-pointer mb-4 bg-gray-900/50">
+        <div class="text-4xl mb-3">🎙️</div>
+        <p class="text-gray-300 mb-2">اسحب وأفلت الملف الصوتي هنا</p>
+        <p class="text-gray-500 text-sm mb-4">أو اضغط للاختيار</p>
+        <p class="text-gray-600 text-xs">يدعم: MP3, WAV, OGG, FLAC, M4A, AAC, OPUS (حتى 500MB)</p>
+        <input type="file" id="file-input" accept="audio/*" class="hidden">
+      </div>
+
+      <!-- File Info -->
+      <div id="file-info" class="hidden bg-gray-800 rounded-xl p-4 mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">🎵</span>
+            <div>
+              <p id="file-name" class="text-white font-medium"></p>
+              <p id="file-meta" class="text-gray-400 text-sm"></p>
+            </div>
+          </div>
+          <button onclick="resetUpload()" class="text-red-400 hover:text-red-300 text-sm latin">✕ إزالة</button>
+        </div>
+
+        <!-- Audio Player -->
+        <audio id="audio-player" controls class="w-full mb-3 rounded-lg"></audio>
+
+        <!-- Compress & Process Button -->
+        <button id="btn-process" onclick="startProcessing()"
+                class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:cursor-not-allowed
+                       text-white font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 latin">
+          <span id="btn-process-text">⚡ بدء المعالجة</span>
+          <span id="btn-process-spinner" class="hidden animate-spin">⏳</span>
+        </button>
+      </div>
+
+      <!-- Progress Bar -->
+      <div id="progress-container" class="hidden">
+        <div class="flex justify-between text-sm text-gray-400 mb-1 latin">
+          <span id="progress-label">جاري الضغط...</span>
+          <span id="progress-pct">0%</span>
+        </div>
+        <div class="w-full bg-gray-800 rounded-full h-3">
+          <div id="progress-bar" class="bg-emerald-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-section" class="hidden">
+      <!-- Summary Bar -->
+      <div class="bg-gray-900 rounded-2xl p-4 mb-4 border border-gray-800">
+        <div class="flex flex-wrap gap-4 items-center justify-between">
+          <div>
+            <span class="text-gray-400 text-sm">النص الكامل:</span>
+            <p id="full-text-preview" class="text-white mt-1 quran-text text-lg line-clamp-2"></p>
+          </div>
+          <div class="flex gap-4 latin text-sm">
+            <div class="text-center"><span class="text-gray-500 block">المقاطع</span><span id="stat-segments" class="text-white font-bold">0</span></div>
+            <div class="text-center"><span class="text-gray-500 block">الثقة</span><span id="stat-confidence" class="text-emerald-400 font-bold">0%</span></div>
+            <div class="text-center"><span class="text-gray-500 block">المدة</span><span id="stat-duration" class="text-white font-bold">0s</span></div>
+          </div>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="flex gap-2 mt-4 flex-wrap">
+          <button onclick="exportResults('json')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm latin transition">📥 JSON</button>
+          <button onclick="exportResults('srt')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm latin transition">📥 SRT</button>
+          <button onclick="exportResults('vtt')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm latin transition">📥 VTT</button>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <h2 class="text-xl font-semibold text-white mb-4">📋 Quran Timeline</h2>
+      <div id="segments-container" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- Fixed Audio Player (sticky bottom) -->
+  <div id="sticky-player" class="hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-3 z-40">
+    <div class="max-w-5xl mx-auto">
+      <audio id="audio-player-sticky" controls class="w-full rounded-lg"></audio>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

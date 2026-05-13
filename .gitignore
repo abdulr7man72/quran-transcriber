@@ -1,0 +1,7 @@
+node_modules/
+uploads/
+compressed/
+.env
+.DS_Store
+*.log
+data/quran_raw.json

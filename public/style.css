@@ -1,0 +1,50 @@
+/* Additional custom styles that extend Tailwind */
+
+/* Smooth audio player */
+audio {
+  border-radius: 12px;
+}
+
+audio::-webkit-media-controls-panel {
+  background-color: #1f2937;
+}
+
+audio::-webkit-media-controls-current-time-display,
+audio::-webkit-media-controls-time-remaining-display {
+  color: #d1d5db;
+}
+
+/* Line clamp for full text preview */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Progress bar animation */
+#progress-bar {
+  transition: width 0.5s ease-in-out;
+}
+
+/* Segment card hover */
+.segment-card:hover .quran-text {
+  color: #34d399;
+}
+
+/* Details/summary styling */
+details summary {
+  cursor: pointer;
+  user-select: none;
+}
+
+details summary:hover {
+  color: #9ca3af;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .quran-text {
+    font-size: 1.2rem;
+  }
+}
