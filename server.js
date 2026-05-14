@@ -118,9 +118,8 @@ app.post('/api/process', async (req, res) => {
       return res.status(400).json({ error: 'compressedPath is required' });
     }
 
-    const fullPath = path.isAbsolute(compressedPath)
-      ? compressedPath
-      : path.join(__dirname, compressedPath.replace(/^\//, ''));
+    // compressedPath comes as /compressed/filename.wav — resolve against app root
+    const fullPath = path.join(__dirname, compressedPath.replace(/^\//, ''));
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ error: `File not found: ${fullPath}` });
     }
