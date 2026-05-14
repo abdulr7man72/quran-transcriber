@@ -181,7 +181,7 @@ async function startProcessing() {
 
     // Step 2: Transcribe with Speechmatics
     setProgress('جاري تحويل الصوت إلى نص...', 50);
-    const results = await processAudio(uploadResult.compressedFullPath);
+    const results = await processAudio(uploadResult.compressedPath);
     state.results = results;
     setProgress('اكتمل التحويل', 90);
 
