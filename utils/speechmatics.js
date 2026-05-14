@@ -64,8 +64,8 @@ function transcribeAudio(audioPath, apiKey) {
       const startMsg = {
         message: 'StartRecognition',
         audio_format: {
-          type: 'file',
-          encoding: 'pcm_s16le',  // WAV PCM 16-bit signed little-endian
+          type: 'raw',           // WebSocket streaming uses 'raw', not 'file'
+          encoding: 'pcm_s16le', // WAV PCM 16-bit signed little-endian
           sample_rate: 16000
         },
         transcription_config: {
@@ -73,10 +73,7 @@ function transcribeAudio(audioPath, apiKey) {
           enable_partials: true,
           max_delay: 2,
           operating_point: 'standard',
-          diarization: 'none',
-          output_config: {
-            encoding: 'utf8'
-          }
+          diarization: 'none'
         }
       };
 
